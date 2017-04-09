@@ -46,7 +46,7 @@ def show_notes(bot, update):
     :return: 
     """
     log_user_message(update)
-    data = requests.get('http://localhost:8003/notes', headers={
+    data = requests.get('{}/notes'.format(config.API_HOST), headers={
         'token': config.USER_TOKENS.get(update.message.chat.username)
     })
     bot.sendMessage(chat_id=update.message.chat_id, text=data.text)
