@@ -1,14 +1,17 @@
 import logging
 from functools import wraps
 from telegram.ext import CommandHandler, Updater
-import requests
 import config
+from api_client import ApiClient
+from formatter import Formatter
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+                    level=config.LOGLEVEL)
 
 updater = Updater(token=config.BOT_TOKEN)
 dispatcher = updater.dispatcher
+api_client = ApiClient()
+formatter = Formatter()
 
 
 def check_username(fn):
@@ -46,10 +49,24 @@ def show_notes(bot, update):
     :return: 
     """
     log_user_message(update)
-    data = requests.get('{}/notes'.format(config.API_HOST), headers={
+
+    result = api_client.make_request('GET', '/notes', headers={
         'token': config.USER_TOKENS.get(update.message.chat.username)
     })
-    bot.sendMessage(chat_id=update.message.chat_id, text=data.text)
+
+    if result.get('success'):
+        return bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text=formatter.format_notes(result.get('data')),
+            parse_mode='Markdown'
+        )
+
+    if isinstance(result.get('data'), dict):
+        message = result.get('data').get('msg')
+    else:
+        message = result.get('data')
+
+    bot.sendMessage(chat_id=update.message.chat_id, text=message)
 
 
 def log_user_message(update):

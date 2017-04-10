@@ -3,3 +3,4 @@ USER_TOKENS = {
     'username': '1d9fd9e2c840e1d7a07040c0017a01c28'
 }
 API_HOST = 'http://localhost:8003'
+LOGLEVEL = 'INFO'
