@@ -90,22 +90,62 @@ def create_note(bot, update):
     :param Update update: 
     :return: 
     """
-    body = get_command_body(update)
+    command_body = get_command_body(update)
 
-    if not body:
+    if not command_body:
         return bot.sendMessage(
             chat_id=update.message.chat_id,
             text='Error creating note: empty command body.'
         )
 
-    result = api_client.make_request('POST', '/notes', json={'header': body}, headers={
-        'token': config.USER_TOKENS.get(update.message.chat.username)
-    })
+    result = api_client.make_request(
+        'POST',
+        '/notes',
+        json={'header': command_body.get('body')},
+        headers={'token': config.USER_TOKENS.get(update.message.chat.username)}
+    )
 
     if result.get('success'):
         return bot.sendMessage(
             chat_id=update.message.chat_id,
             text=formatter.format_created_note(result.get('data')),
+            parse_mode='Markdown'
+        )
+
+    bot.sendMessage(
+        chat_id=update.message.chat_id,
+        text=result.get('data')
+    )
+
+
+@check_username
+@log_command
+def edit_note_body(bot, update):
+    """
+    Edits message body
+    :param Bot bot: 
+    :param Update update: 
+    :return: 
+    """
+    command_body = get_command_body(update, without_id=False)
+
+    if not command_body:
+        return bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text='Error editing note body: empty command body.'
+        )
+
+    result = api_client.make_request(
+        'PUT',
+        '/notes/{}'.format(command_body.get('id')),
+        json={'body': command_body.get('body')},
+        headers={'token': config.USER_TOKENS.get(update.message.chat.username)}
+    )
+
+    if result.get('success'):
+        return bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text=formatter.format_edited_note(result.get('data')),
             parse_mode='Markdown'
         )
 
@@ -131,21 +171,31 @@ def log_user_message(update):
     )
 
 
-def get_command_body(update):
+def get_command_body(update, without_id=True):
     """
     Returns command body
-    :param Update update: 
+    :param Update update:
+    :param bool without_id:
     :return:
     """
     command_list = update.message.text.split(' ')
 
-    if len(command_list) > 1:
-        return ' '.join(command_list[1:])
+    if without_id and len(command_list) > 1:
+        return {
+            'body': ' '.join(command_list[1:])
+        }
+
+    if not without_id and len(command_list) > 2:
+        return {
+            'id': command_list[1],
+            'body': ' '.join(command_list[2:])
+        }
 
     return None
 
 dispatcher.add_handler(CommandHandler('start', start))
 dispatcher.add_handler(CommandHandler('sn', show_notes))
 dispatcher.add_handler(CommandHandler('cn', create_note))
+dispatcher.add_handler(CommandHandler('enb', edit_note_body))
 
 updater.start_polling()
