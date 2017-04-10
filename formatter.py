@@ -10,11 +10,20 @@ class Formatter:
         :param list notes: 
         :return: 
         """
-        formated_notes = '*Notes*:\n\n'
+        formatted_notes = '*Notes*:\n\n'
 
         for note in notes:
-            formated_notes += 'Id: {}\n`{}`\n\n'.format(
+            formatted_notes += 'Id: {}\n`{}`\n\n'.format(
                 note.get('_id'), note.get('header')
             )
 
-        return formated_notes
+        return formatted_notes
+
+    @staticmethod
+    def format_created_note(note):
+        """
+        Formates created note
+        :param dict note: 
+        :return: 
+        """
+        return '*Note created*:\nId: {}'.format(note.get('_id'))
