@@ -16,7 +16,9 @@ class ApiClient:
         :param data: 
         :return: 
         """
-        return data.json() if 'json' in data.headers.get('Content-Type') else data.text
+        return data.json()\
+            if data.text.strip() and 'json' in data.headers.get('Content-Type')\
+            else data.text
 
     @staticmethod
     def is_success_request(data):

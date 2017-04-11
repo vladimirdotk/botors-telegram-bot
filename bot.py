@@ -127,7 +127,7 @@ def edit_note_body(bot, update):
     :param Update update: 
     :return: 
     """
-    command_body = get_command_body(update, without_id=False)
+    command_body = get_command_body(update, with_id=True)
 
     if not command_body:
         return bot.sendMessage(
@@ -155,6 +155,41 @@ def edit_note_body(bot, update):
     )
 
 
+@check_username
+@log_command
+def delete_note(bot, update):
+    """
+    Removes note
+    :param Bot bot: 
+    :param Update update: 
+    :return: 
+    """
+    note_id = get_note_id(update)
+
+    if not note_id:
+        return bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text='Error removing a note: empty note id.'
+        )
+
+    result = api_client.make_request(
+        'DELETE',
+        '/notes/{}'.format(note_id),
+        headers={'token': config.USER_TOKENS.get(update.message.chat.username)}
+    )
+
+    if result.get('success'):
+        return bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text='Note has been deleted.',
+        )
+
+    bot.sendMessage(
+        chat_id=update.message.chat_id,
+        text=result.get('data')
+    )
+
+
 def log_user_message(update):
     """
     Logs received message
@@ -171,25 +206,38 @@ def log_user_message(update):
     )
 
 
-def get_command_body(update, without_id=True):
+def get_command_body(update, with_id=False):
     """
     Returns command body
     :param Update update:
-    :param bool without_id:
+    :param bool with_id:
     :return:
     """
     command_list = update.message.text.split(' ')
 
-    if without_id and len(command_list) > 1:
-        return {
-            'body': ' '.join(command_list[1:])
-        }
-
-    if not without_id and len(command_list) > 2:
+    if with_id and len(command_list) > 2:
         return {
             'id': command_list[1],
             'body': ' '.join(command_list[2:])
         }
+
+    if not with_id and len(command_list) > 1:
+        return {
+            'body': ' '.join(command_list[1:])
+        }
+
+    return None
+
+
+def get_note_id(update):
+    """
+    Returns note_id
+    :param Update update: 
+    :return: 
+    """
+    command_list = update.message.text.split(' ')
+    if len(command_list) == 2:
+        return command_list[1].strip()
 
     return None
 
@@ -197,5 +245,6 @@ dispatcher.add_handler(CommandHandler('start', start))
 dispatcher.add_handler(CommandHandler('sn', show_notes))
 dispatcher.add_handler(CommandHandler('cn', create_note))
 dispatcher.add_handler(CommandHandler('enb', edit_note_body))
+dispatcher.add_handler(CommandHandler('dn', delete_note))
 
 updater.start_polling()
