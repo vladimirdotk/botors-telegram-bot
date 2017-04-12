@@ -154,6 +154,42 @@ def edit_note_body(bot, update):
         text=result.get('data')
     )
 
+@check_username
+@log_command
+def edit_note_header(bot, update):
+    """
+    Edits note header
+    :param Bot bot: 
+    :param Update update: 
+    :return: 
+    """
+    command_body = get_command_body(update, with_id=True)
+
+    if not command_body:
+        return bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text='Error editing note header: empty command body.'
+        )
+
+    result = api_client.make_request(
+        'PUT',
+        '/notes/{}'.format(command_body.get('id')),
+        json={'header': command_body.get('body')},
+        headers={'token': config.USER_TOKENS.get(update.message.chat.username)}
+    )
+
+    if result.get('success'):
+        return bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text=formatter.format_edited_note(result.get('data')),
+            parse_mode='Markdown'
+        )
+
+    bot.sendMessage(
+        chat_id=update.message.chat_id,
+        text=result.get('data')
+    )
+
 
 @check_username
 @log_command
@@ -245,6 +281,7 @@ dispatcher.add_handler(CommandHandler('start', start))
 dispatcher.add_handler(CommandHandler('sn', show_notes))
 dispatcher.add_handler(CommandHandler('cn', create_note))
 dispatcher.add_handler(CommandHandler('enb', edit_note_body))
+dispatcher.add_handler(CommandHandler('enh', edit_note_header))
 dispatcher.add_handler(CommandHandler('dn', delete_note))
 
 updater.start_polling()
