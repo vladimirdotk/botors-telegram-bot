@@ -193,6 +193,54 @@ def edit_note_header(bot, update):
 
 @check_username
 @log_command
+def append_note_body(bot, update):
+    """
+    Appends body to note
+    :param bot: 
+    :param update: 
+    :return: 
+    """
+    command_body = get_command_body(update, with_id=True)
+
+    if not command_body:
+        return bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text='Error appending note body: empty command body.'
+        )
+
+    note_data = api_client.make_request(
+        'GET',
+        '/notes/{}'.format(command_body.get('id')),
+        headers={'token': config.USER_TOKENS.get(update.message.chat.username)}
+    )
+
+    if note_data.get('success'):
+
+        note_body = note_data['data']['body']
+
+        result = api_client.make_request(
+            'PUT',
+            '/notes/{}'.format(command_body.get('id')),
+            json={'body': '{} {}'.format(note_body, command_body.get('body'))},
+            headers={'token': config.USER_TOKENS.get(update.message.chat.username)}
+        )
+
+        if result.get('success'):
+            return bot.sendMessage(
+                chat_id=update.message.chat_id,
+                text=formatter.format_edited_note(result.get('data')),
+                parse_mode='Markdown'
+            )
+
+        bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text=result.get('data')
+        )
+
+
+
+@check_username
+@log_command
 def delete_note(bot, update):
     """
     Removes note
@@ -283,5 +331,7 @@ dispatcher.add_handler(CommandHandler('cn', create_note))
 dispatcher.add_handler(CommandHandler('enb', edit_note_body))
 dispatcher.add_handler(CommandHandler('enh', edit_note_header))
 dispatcher.add_handler(CommandHandler('dn', delete_note))
+dispatcher.add_handler(CommandHandler('anb', append_note_body))
+
 
 updater.start_polling()
