@@ -1,4 +1,5 @@
 import logging
+import sys
 from functools import wraps
 from telegram.ext import CommandHandler, Updater
 import config
@@ -80,6 +81,8 @@ def show_notes(bot, update):
 
     bot.sendMessage(chat_id=update.message.chat_id, text=message)
 
+show_notes.help = """*Show Notes* /sn\n"""
+
 
 @check_username
 @log_command
@@ -116,6 +119,8 @@ def create_note(bot, update):
         chat_id=update.message.chat_id,
         text=result.get('data')
     )
+
+create_note.help = """*Create Note* /cn header\n"""
 
 
 @check_username
@@ -154,6 +159,9 @@ def edit_note_body(bot, update):
         text=result.get('data')
     )
 
+edit_note_body.help = """*Edit Note Body* /enb id body\n"""
+
+
 @check_username
 @log_command
 def edit_note_header(bot, update):
@@ -189,6 +197,8 @@ def edit_note_header(bot, update):
         chat_id=update.message.chat_id,
         text=result.get('data')
     )
+
+edit_note_header.help = """*Edit Note Header* /enh id header\n"""
 
 
 @check_username
@@ -237,6 +247,7 @@ def append_note_body(bot, update):
             text=result.get('data')
         )
 
+append_note_body.help = """*Append to Note Body* /anb id body\n"""
 
 
 @check_username
@@ -272,6 +283,8 @@ def delete_note(bot, update):
         chat_id=update.message.chat_id,
         text=result.get('data')
     )
+
+delete_note.help = """*Delete Note* /dn id\n"""
 
 
 def log_user_message(update):
@@ -325,6 +338,24 @@ def get_note_id(update):
 
     return None
 
+
+@check_username
+@log_command
+def show_help(bot, update):
+    help_docs = ''
+
+    for attr_value in sys.modules[__name__].__dict__.values():
+        if callable(attr_value) and hasattr(attr_value, 'help'):
+            help_docs += '\n' + attr_value.help
+
+    bot.sendMessage(
+        chat_id=update.message.chat_id,
+        text=help_docs,
+        parse_mode='Markdown'
+    )
+
+
+dispatcher.add_handler(CommandHandler('help', show_help))
 dispatcher.add_handler(CommandHandler('start', start))
 dispatcher.add_handler(CommandHandler('sn', show_notes))
 dispatcher.add_handler(CommandHandler('cn', create_note))
@@ -332,6 +363,5 @@ dispatcher.add_handler(CommandHandler('enb', edit_note_body))
 dispatcher.add_handler(CommandHandler('enh', edit_note_header))
 dispatcher.add_handler(CommandHandler('dn', delete_note))
 dispatcher.add_handler(CommandHandler('anb', append_note_body))
-
 
 updater.start_polling()
