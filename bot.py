@@ -86,6 +86,44 @@ show_notes.help = """*Show Notes* /sn\n"""
 
 @check_username
 @log_command
+def show_full_note(bot, update):
+    """
+    Show notes handler
+    :param Bot bot: 
+    :param Update update: 
+    :return: 
+    """
+    note_id = get_note_id(update)
+
+    if not note_id:
+        return bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text='Error getting note id'
+        )
+
+    result = api_client.make_request(
+        'GET',
+        '/notes/{}'.format(note_id),
+        headers={'token': config.USER_TOKENS.get(update.message.chat.username)}
+    )
+
+    if result.get('success'):
+        return bot.sendMessage(
+            chat_id=update.message.chat_id,
+            text=formatter.format_note(result.get('data')),
+            parse_mode='Markdown'
+        )
+
+    bot.sendMessage(
+        chat_id=update.message.chat_id,
+        text=result.get('data')
+    )
+
+show_full_note.help = """*Show Full Note* /sfn id\n"""
+
+
+@check_username
+@log_command
 def create_note(bot, update):
     """
     Creates note
@@ -363,5 +401,6 @@ dispatcher.add_handler(CommandHandler('enb', edit_note_body))
 dispatcher.add_handler(CommandHandler('enh', edit_note_header))
 dispatcher.add_handler(CommandHandler('dn', delete_note))
 dispatcher.add_handler(CommandHandler('anb', append_note_body))
+dispatcher.add_handler(CommandHandler('sfn', show_full_note))
 
 updater.start_polling()

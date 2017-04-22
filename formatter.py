@@ -35,3 +35,13 @@ class Formatter:
         return '*Note edited*:\n\nId: {}\n*{}*\n`{}`'.format(
             note.get('_id'), note.get('header'), note.get('body')
         )
+
+    def format_note(self, note):
+        """
+        Formates edited note
+        :param dict note: 
+        :return: 
+        """
+        return '*Note*:\n\nId: {}\n*{}*\n`{}`'.format(
+            note.get('_id'), note.get('header'), note.get('body')
+        )
